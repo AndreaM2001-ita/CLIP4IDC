@@ -1,0 +1,111 @@
+[
+    {
+        "img_id": "v2_100",
+        "sentences": [
+            "The pineapple in Image 1 is rough compared to Image 2.",
+            "The pineapple in Image 1 is wider compared to Image 2.",
+            "The pineapple in Image 2 is light yellow compared to Image 1.",
+            "The thorns of the pineapple in Image 1 are bigger than in Image 2.",
+            "The pineapple in Image 1 is smoother than in Image 2.",
+            "The pineapple in Image 1 is darker than in Image 2."
+        ]
+    },
+    {
+        "img_id": "v2_1017",
+        "sentences": [
+            "The baguette in image 1 is shiny compared to image 2.",
+            "The baguette in image 2 is wider compared to the one in image 1.",
+            "The baguette in image 2 has a darker color compared to image 1. ",
+            "The slices on top of the baguette in Image 1 are bigger than in Image 2.",
+            "The baguette in Image 1 is darker than in Image 2.",
+            "The baguette in Image 1 is glossier than in Image 2."
+        ]
+    },
+    {
+        "img_id": "v2_1025",
+        "sentences": [
+            "The abaya in image 1 is darker in color compared to image 2. ",
+            "The abaya in image 1 is slightly smaller in waist area compared to image 2. ",
+            "The abaya in Image 2 is glossier than in Image 1.",
+            "The abaya in Image 1 is darker than in Image 2.",
+            "The abaya in Image 1 is wider than in Image 2.",
+            "The abaya in Image 2 is glossier than in Image 1."
+        ]
+    },
+    {
+        "img_id": "v2_1033",
+        "sentences": [
+            "The comic book in Image 1 has a smooth surface compared to Image 2.",
+            "The comic book in Image 1 has a thicker cover compared to Image 2.",
+            "The comic book in Image 1 is more vibrant compared to Image 2.",
+            "The comic book in image 2 is darker than the image 1.",
+            "The comic book in image 1 is smoother than the image 2.",
+            "The comic book in image 1 is pointed than then image 2."
+        ]
+    },
+    {
+        "img_id": "v2_1040",
+        "sentences": [
+            "The dam in Image 2 has a rougher surface compared to Image 1.",
+            "The dam in Image 2 is darker than in Image 1.",
+            "The dam in Image 1 has a perfect arch form compared to Image 2.",
+            "The dam in image 2 is darker than the image 1.",
+            "The dam in image 1 is smoother than the image 2. ",
+            "The dam in image 1 is wider than the image 2."
+        ]
+    },
+    {
+        "img_id": "v2_1051",
+        "sentences": [
+            "The typewriter keyboard in Image 2 is slightly yellowish compared to Image 1.",
+            "The typewriter keyboard in Image 2 has a bulging cover compared to Image 1. ",
+            "The typewriter keyboard in Image 1 is slightly glossy compared to Image 2.",
+            "The typewriter keyboard in image 2 has a more rectangular shape than the image 1. ",
+            "The typewriter keyboard in image 1 is smoother than the image 2.",
+            "The typewriter keyboard in image 2 is darker than the image 1."
+        ]
+    },
+    {
+        "img_id": "v2_1052",
+        "sentences": [
+            "The manhole cover in Image 1 is slightly lighter in color compared to Image 2.",
+            "The manhole cover in Image 1 is round compared to Image 2.",
+            "The manhole cover in Image 2 is rough compared to Image 1.",
+            "The manhole cover in image 1 has a circle shape than the image 2.",
+            "The manhole cover in image 2 is darker than the image 1.",
+            "The manhole cover in image 2 has a rougher surface than the image 1."
+        ]
+    },
+    {
+        "img_id": "v2_1056",
+        "sentences": [
+            "The iPod display screen in image 2 is slightly larger compared to image 1. ",
+            "The iPod in image 2 is glossy compared to image 1. ",
+            "The iPod in image 1 has lighter colors compared to image 2. ",
+            "The iPod display screen in image 1 has a bigger screen than the image 2.",
+            "The iPod in image 1 has more glossy area than the image 2.",
+            "The iPod in image 2 is darker than the image 1."
+        ]
+    },
+    {
+        "img_id": "v2_1064",
+        "sentences": [
+            "The pizza in Image 2 has a larger topping compared to Image 1.",
+            "The pizza in Image 1 is smoother compared to Image 2.",
+            "The pizza in Image 2 is brighter than the Image 1.",
+            "The pizza in image 1 has a wider topping than the image 2.",
+            "The pizza in image 1 is smoother than the image 2. ",
+            "The pizza in image 1 is darker than the image 2. "
+        ]
+    },
+    {
+        "img_id": "v2_1075",
+        "sentences": [
+            "The tripod in Image 2 is darker in color compared to the Image 1.",
+            "The tripod in Image 1 is more polished than the Image 2.",
+            "The tripod in Image 1 has a bigger camera lens compared to Image 1.",
+            "The tripod in image 1 has a glossy center column than the image 2.",
+            "The tripod in image 2 is darker than the image 1.",
+            "The tripod lens in image 2 is bigger than the image 1."
+        ]
+    }]
