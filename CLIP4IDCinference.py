@@ -600,7 +600,7 @@ def refectorResults(input_data,image_names):
           output_data[image_name] = {'img_id': image_name, 'sentences': []}
       
       # Append the caption to the captions list, but ensure there are only 4 captions max
-      if len(output_data[image_name]['sentences']) < 6:
+      if len(output_data[image_name]['sentences']) < 4:
           output_data[image_name]['sentences'].append(caption)
 
   # Convert the output_data dictionary into a list of dictionaries
@@ -642,7 +642,7 @@ def eval_epoch(args, model, test_dataloader, tokenizer, device ):
             image_pair = torch.cat([bef_image, aft_image], 1)
             # Process the generated result and extract text
             loopCounter=0
-            for iteration in range(6):
+            for iteration in range(4):
                 result_list = greedy_decode(args, model, tokenizer, input_ids, segment_ids, input_mask, image_pair, image_mask)
                 
                 # Process the generated result and extract text
