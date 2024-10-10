@@ -3,6 +3,8 @@ from __future__ import division
 from __future__ import unicode_literals
 from __future__ import print_function
 
+
+import captionsGeneration
 import torch
 import numpy as np
 import random
@@ -34,6 +36,7 @@ os.environ['WORLD_SIZE'] = '1'
 torch.distributed.init_process_group(backend="nccl")
 
 global logger
+
 
 class EvalCap(COCOEvalCap):
     def __init__(self, coco, cocoRes):
@@ -84,41 +87,63 @@ class EvalCap(COCOEvalCap):
                 print("%s: %0.3f" % (method, score))
         self.setEvalImgs()
 
+
 def get_args(description='CLIP4IDC on Captioning Task'):
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("--do_pretrain", action='store_true', help="Whether to run training.")
-    parser.add_argument("--do_train", action='store_true', help="Whether to run training.")
-    parser.add_argument("--do_eval", action='store_true', help="Whether to run eval on the dev set.")
+    parser.add_argument("--do_pretrain", action='store_true',
+                        help="Whether to run training.")
+    parser.add_argument("--do_train", action='store_true',
+                        help="Whether to run training.")
+    parser.add_argument("--do_eval", action='store_true',
+                        help="Whether to run eval on the dev set.")
 
-    parser.add_argument('--data_path', type=str, default='data/datatype', help='data file path')
-    parser.add_argument('--features_path', type=str, default='data/datatype/images', help='feature path')
+    parser.add_argument('--data_path', type=str,
+                        default='data/datatype', help='data file path')
+    parser.add_argument('--features_path', type=str,
+                        default='data/datatype/images', help='feature path')
 
     parser.add_argument('--num_thread_reader', type=int, default=1, help='')
-    parser.add_argument('--lr', type=float, default=0.0001, help='initial learning rate')
-    parser.add_argument('--epochs', type=int, default=20, help='upper epoch limit')
-    parser.add_argument('--batch_size', type=int, default=256, help='batch size')
-    parser.add_argument('--batch_size_val', type=int, default=3500, help='batch size eval')
-    parser.add_argument('--lr_decay', type=float, default=0.9, help='Learning rate exp epoch decay')
-    parser.add_argument('--n_display', type=int, default=100, help='Information display frequence')
+    parser.add_argument('--lr', type=float, default=0.0001,
+                        help='initial learning rate')
+    parser.add_argument('--epochs', type=int, default=20,
+                        help='upper epoch limit')
+    parser.add_argument('--batch_size', type=int,
+                        default=256, help='batch size')
+    parser.add_argument('--batch_size_val', type=int,
+                        default=3500, help='batch size eval')
+    parser.add_argument('--lr_decay', type=float, default=0.9,
+                        help='Learning rate exp epoch decay')
+    parser.add_argument('--n_display', type=int, default=100,
+                        help='Information display frequence')
     parser.add_argument('--seed', type=int, default=42, help='random seed')
     parser.add_argument('--max_words', type=int, default=20, help='')
-    parser.add_argument('--margin', type=float, default=0.1, help='margin for loss')
-    parser.add_argument('--hard_negative_rate', type=float, default=0.5, help='rate of intra negative sample')
-    parser.add_argument('--negative_weighting', type=int, default=1, help='Weight the loss for intra negative')
-    parser.add_argument('--n_pair', type=int, default=1, help='Num of pair to output from data loader')
+    parser.add_argument('--margin', type=float,
+                        default=0.1, help='margin for loss')
+    parser.add_argument('--hard_negative_rate', type=float,
+                        default=0.5, help='rate of intra negative sample')
+    parser.add_argument('--negative_weighting', type=int,
+                        default=1, help='Weight the loss for intra negative')
+    parser.add_argument('--n_pair', type=int, default=1,
+                        help='Num of pair to output from data loader')
 
     parser.add_argument("--output_dir", default=None, type=str, required=True,
                         help="The output directory where the model predictions and checkpoints will be written.")
-    parser.add_argument("--cross_model", default="cross-base", type=str, required=False, help="Cross module")
-    parser.add_argument("--decoder_model", default="decoder-base", type=str, required=False, help="Decoder module")
-    parser.add_argument("--init_model", default=None, type=str, required=False, help="Initial model.")
-    parser.add_argument("--resume_model", default=None, type=str, required=False, help="Resume train model.")
-    parser.add_argument("--do_lower_case", action='store_true', help="Set this flag if you are using an uncased model.")
+    parser.add_argument("--cross_model", default="cross-base",
+                        type=str, required=False, help="Cross module")
+    parser.add_argument("--decoder_model", default="decoder-base",
+                        type=str, required=False, help="Decoder module")
+    parser.add_argument("--init_model", default=None, type=str,
+                        required=False, help="Initial model.")
+    parser.add_argument("--resume_model", default=None,
+                        type=str, required=False, help="Resume train model.")
+    parser.add_argument("--do_lower_case", action='store_true',
+                        help="Set this flag if you are using an uncased model.")
     parser.add_argument("--warmup_proportion", default=0.1, type=float,
                         help="Proportion of training to perform linear learning rate warmup for. E.g., 0.1 = 10%% of training.")
     parser.add_argument('--gradient_accumulation_steps', type=int, default=1,
                         help="Number of updates steps to accumulate before performing a backward/update pass.")
-    parser.add_argument('--n_gpu', type=int, default=1, help="Changed in the execute process.")
+    parser.add_argument('--n_gpu', type=int, default=1,
+                        help="Changed in the execute process.")
 
     parser.add_argument("--cache_dir", default="", type=str,
                         help="Where do you want to store the pre-trained models downloaded from s3")
@@ -129,27 +154,41 @@ def get_args(description='CLIP4IDC on Captioning Task'):
                         help="For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']."
                              "See details at https://nvidia.github.io/apex/amp.html")
 
-    parser.add_argument("--task_type", default="caption", type=str, help="Point the task `retrieval` or `caption` to finetune.")
-    parser.add_argument("--datatype", default="msrvtt", type=str, help="Point the dataset to finetune.")
+    parser.add_argument("--task_type", default="caption", type=str,
+                        help="Point the task `retrieval` or `caption` to finetune.")
+    parser.add_argument("--datatype", default="msrvtt",
+                        type=str, help="Point the dataset to finetune.")
 
-    parser.add_argument("--world_size", default=0, type=int, help="distribted training")
-    parser.add_argument("--local_rank", default=0, type=int, help="distribted training")
+    parser.add_argument("--world_size", default=0,
+                        type=int, help="distribted training")
+    parser.add_argument("--local_rank", default=0,
+                        type=int, help="distribted training")
 
-    parser.add_argument("--rank", default=0, type=int, help="distribted training")
-    parser.add_argument('--coef_lr', type=float, default=1., help='coefficient for bert branch.')
-    parser.add_argument('--use_mil', action='store_true', help="Whether use MIL as Miech et. al. (2020).")
-    parser.add_argument('--sampled_use_mil', action='store_true', help="Whether MIL, has a high priority than use_mil.")
+    parser.add_argument("--rank", default=0, type=int,
+                        help="distribted training")
+    parser.add_argument('--coef_lr', type=float, default=1.,
+                        help='coefficient for bert branch.')
+    parser.add_argument('--use_mil', action='store_true',
+                        help="Whether use MIL as Miech et. al. (2020).")
+    parser.add_argument('--sampled_use_mil', action='store_true',
+                        help="Whether MIL, has a high priority than use_mil.")
 
-    parser.add_argument('--text_num_hidden_layers', type=int, default=12, help="Layer NO. of text.")
-    parser.add_argument('--visual_num_hidden_layers', type=int, default=12, help="Layer NO. of visual.")
-    parser.add_argument('--intra_num_hidden_layers', type=int, default=9, help="Layer NO. of intra module")
-    parser.add_argument('--cross_num_hidden_layers', type=int, default=2, help="Layer NO. of cross.")
+    parser.add_argument('--text_num_hidden_layers', type=int,
+                        default=12, help="Layer NO. of text.")
+    parser.add_argument('--visual_num_hidden_layers', type=int,
+                        default=12, help="Layer NO. of visual.")
+    parser.add_argument('--intra_num_hidden_layers', type=int,
+                        default=9, help="Layer NO. of intra module")
+    parser.add_argument('--cross_num_hidden_layers', type=int,
+                        default=2, help="Layer NO. of cross.")
 
-    parser.add_argument('--freeze_layer_num', type=int, default=0, help="Layer NO. of CLIP need to freeze.")
+    parser.add_argument('--freeze_layer_num', type=int,
+                        default=0, help="Layer NO. of CLIP need to freeze.")
     parser.add_argument('--linear_patch', type=str, default="2d", choices=["2d", "3d"],
                         help="linear projection of flattened patches.")
 
-    parser.add_argument("--pretrained_clip_name", default="ViT-B/32", type=str, help="Choose a CLIP version")
+    parser.add_argument("--pretrained_clip_name", default="ViT-B/32",
+                        type=str, help="Choose a CLIP version")
     parser.add_argument("--gt_dir", default="gt", type=str,
                         help="The output directory where the model predictions and checkpoints will be written.")
 
@@ -160,11 +199,13 @@ def get_args(description='CLIP4IDC on Captioning Task'):
         raise ValueError("Invalid gradient_accumulation_steps parameter: {}, should be >= 1".format(
             args.gradient_accumulation_steps))
     if not args.do_train and not args.do_eval:
-        raise ValueError("At least one of `do_train` or `do_eval` must be True.")
+        raise ValueError(
+            "At least one of `do_train` or `do_eval` must be True.")
 
     args.batch_size = int(args.batch_size / args.gradient_accumulation_steps)
 
     return args
+
 
 def set_seed_logger(args):
     global logger
@@ -197,10 +238,12 @@ def set_seed_logger(args):
 
     return args
 
+
 def init_device(args, local_rank):
     global logger
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu", local_rank)
+    device = torch.device(
+        "cuda" if torch.cuda.is_available() else "cpu", local_rank)
 
     n_gpu = torch.cuda.device_count()
     logger.info("device: {} n_gpu: {}".format(device, n_gpu))
@@ -212,6 +255,7 @@ def init_device(args, local_rank):
 
     return device, n_gpu
 
+
 def init_model(args, device, n_gpu, local_rank):
 
     if args.init_model:
@@ -220,12 +264,15 @@ def init_model(args, device, n_gpu, local_rank):
         model_state_dict = None
 
     # Prepare model
-    cache_dir = args.cache_dir if args.cache_dir else os.path.join(str(PYTORCH_PRETRAINED_BERT_CACHE), 'distributed')
-    model = CLIP4IDC.from_pretrained(args.cross_model, args.decoder_model, cache_dir=cache_dir, state_dict=model_state_dict, task_config=args)
+    cache_dir = args.cache_dir if args.cache_dir else os.path.join(
+        str(PYTORCH_PRETRAINED_BERT_CACHE), 'distributed')
+    model = CLIP4IDC.from_pretrained(args.cross_model, args.decoder_model,
+                                     cache_dir=cache_dir, state_dict=model_state_dict, task_config=args)
 
     model.to(device)
 
     return model
+
 
 def prep_optimizer(args, model, num_train_optimization_steps, device, n_gpu, local_rank, coef_lr=1.):
 
@@ -235,8 +282,10 @@ def prep_optimizer(args, model, num_train_optimization_steps, device, n_gpu, loc
     param_optimizer = list(model.named_parameters())
     no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
 
-    decay_param_tp = [(n, p) for n, p in param_optimizer if not any(nd in n for nd in no_decay)]
-    no_decay_param_tp = [(n, p) for n, p in param_optimizer if any(nd in n for nd in no_decay)]
+    decay_param_tp = [(n, p) for n, p in param_optimizer if not any(
+        nd in n for nd in no_decay)]
+    no_decay_param_tp = [(n, p) for n, p in param_optimizer if any(
+        nd in n for nd in no_decay)]
 
     decay_clip_param_tp = [(n, p) for n, p in decay_param_tp
                            if "clip." in n]
@@ -251,10 +300,14 @@ def prep_optimizer(args, model, num_train_optimization_steps, device, n_gpu, loc
     # weight_decay = 0.2
     weight_decay = 0.01
     optimizer_grouped_parameters = [
-        {'params': [p for n, p in decay_clip_param_tp], 'weight_decay': weight_decay, 'lr': args.lr * coef_lr},
-        {'params': [p for n, p in decay_noclip_param_tp], 'weight_decay': weight_decay},
-        {'params': [p for n, p in no_decay_clip_param_tp], 'weight_decay': 0.0, 'lr': args.lr * coef_lr},
-        {'params': [p for n, p in no_decay_noclip_param_tp], 'weight_decay': 0.0}
+        {'params': [p for n, p in decay_clip_param_tp],
+            'weight_decay': weight_decay, 'lr': args.lr * coef_lr},
+        {'params': [p for n, p in decay_noclip_param_tp],
+            'weight_decay': weight_decay},
+        {'params': [p for n, p in no_decay_clip_param_tp],
+            'weight_decay': 0.0, 'lr': args.lr * coef_lr},
+        {'params': [p for n, p in no_decay_noclip_param_tp],
+            'weight_decay': 0.0}
     ]
 
     scheduler = None
@@ -272,13 +325,14 @@ def prep_optimizer(args, model, num_train_optimization_steps, device, n_gpu, loc
 
     return optimizer, scheduler, model
 
+
 def save_model(epoch, args, model, optimizer, tr_loss, type_name=""):
     # Only save the model it-self
     model_to_save = model.module if hasattr(model, 'module') else model
     output_model_file = os.path.join(
-        args.output_dir, "pytorch_model.bin.{}{}".format("" if type_name=="" else type_name+".", epoch))
+        args.output_dir, "pytorch_model.bin.{}{}".format("" if type_name == "" else type_name+".", epoch))
     optimizer_state_file = os.path.join(
-        args.output_dir, "pytorch_opt.bin.{}{}".format("" if type_name=="" else type_name+".", epoch))
+        args.output_dir, "pytorch_opt.bin.{}{}".format("" if type_name == "" else type_name+".", epoch))
     torch.save(model_to_save.state_dict(), output_model_file)
     # torch.save({
     #         'epoch': epoch,
@@ -289,21 +343,26 @@ def save_model(epoch, args, model, optimizer, tr_loss, type_name=""):
     logger.info("Optimizer saved to %s", optimizer_state_file)
     return output_model_file
 
+
 def load_model(epoch, args, n_gpu, device, model_file=None):
     if model_file is None or len(model_file) == 0:
-        model_file = os.path.join(args.output_dir, "pytorch_model.bin.{}".format(epoch))
+        model_file = os.path.join(
+            args.output_dir, "pytorch_model.bin.{}".format(epoch))
     if os.path.exists(model_file):
         model_state_dict = torch.load(model_file, map_location='cpu')
         if args.local_rank == 0:
             logger.info("Model loaded from %s", model_file)
         # Prepare model
-        cache_dir = args.cache_dir if args.cache_dir else os.path.join(str(PYTORCH_PRETRAINED_BERT_CACHE), 'distributed')
-        model = CLIP4IDC.from_pretrained(args.cross_model, cache_dir=cache_dir, state_dict=model_state_dict, task_config=args)
+        cache_dir = args.cache_dir if args.cache_dir else os.path.join(
+            str(PYTORCH_PRETRAINED_BERT_CACHE), 'distributed')
+        model = CLIP4IDC.from_pretrained(
+            args.cross_model, cache_dir=cache_dir, state_dict=model_state_dict, task_config=args)
 
         model.to(device)
     else:
         model = None
     return model
+
 
 def train_epoch(epoch, args, model, train_dataloader, device, n_gpu, optimizer, scheduler, global_step, local_rank=0):
     global logger
@@ -316,23 +375,24 @@ def train_epoch(epoch, args, model, train_dataloader, device, n_gpu, optimizer, 
     optimizer.zero_grad()
     for step, batch in enumerate(train_dataloader):
         image_name = batch[-1]
-        batch = tuple(t.to(device=device, non_blocking=True) for t in batch[:-1])
+        batch = tuple(t.to(device=device, non_blocking=True)
+                      for t in batch[:-1])
 
         if args.datatype == "clevr":
             input_ids, input_mask, segment_ids, bef_image, aft_image, no_image, image_mask, \
-            pairs_input_caption_ids, pairs_decoder_mask, pairs_output_caption_ids, \
-            no_pairs_input_caption_ids, no_pairs_decoder_mask, no_pairs_output_caption_ids = batch
+                pairs_input_caption_ids, pairs_decoder_mask, pairs_output_caption_ids, \
+                no_pairs_input_caption_ids, no_pairs_decoder_mask, no_pairs_output_caption_ids = batch
 
             loss1 = model(input_ids, segment_ids, input_mask, bef_image, aft_image, image_mask,
-                         input_caption_ids=pairs_input_caption_ids, decoder_mask=pairs_decoder_mask,
-                         output_caption_ids=pairs_output_caption_ids)
+                          input_caption_ids=pairs_input_caption_ids, decoder_mask=pairs_decoder_mask,
+                          output_caption_ids=pairs_output_caption_ids)
             loss2 = model(input_ids, segment_ids, input_mask, bef_image, no_image, image_mask,
-                         input_caption_ids=no_pairs_input_caption_ids, decoder_mask=no_pairs_decoder_mask,
-                         output_caption_ids=no_pairs_output_caption_ids)
+                          input_caption_ids=no_pairs_input_caption_ids, decoder_mask=no_pairs_decoder_mask,
+                          output_caption_ids=no_pairs_output_caption_ids)
             loss = loss1 + loss2
         else:
             input_ids, input_mask, segment_ids, bef_image, aft_image, image_mask, \
-            pairs_input_caption_ids, pairs_decoder_mask, pairs_output_caption_ids = batch
+                pairs_input_caption_ids, pairs_decoder_mask, pairs_output_caption_ids = batch
 
             loss = model(input_ids, segment_ids, input_mask, bef_image, aft_image, image_mask,
                          input_caption_ids=pairs_input_caption_ids, decoder_mask=pairs_decoder_mask,
@@ -358,7 +418,8 @@ def train_epoch(epoch, args, model, train_dataloader, device, n_gpu, optimizer, 
 
             # https://github.com/openai/CLIP/issues/46
             if hasattr(model, 'module'):
-                torch.clamp_(model.module.clip.logit_scale.data, max=np.log(100))
+                torch.clamp_(model.module.clip.logit_scale.data,
+                             max=np.log(100))
             else:
                 torch.clamp_(model.clip.logit_scale.data, max=np.log(100))
 
@@ -366,13 +427,15 @@ def train_epoch(epoch, args, model, train_dataloader, device, n_gpu, optimizer, 
             if global_step % log_step == 0 and local_rank == 0:
                 logger.info("Epoch: %d/%s, Step: %d/%d, Lr: %s, Loss: %f, Time/step: %f", epoch + 1,
                             args.epochs, step + 1,
-                            len(train_dataloader), "-".join([str('%.9f'%itm) for itm in sorted(list(set(optimizer.get_lr())))]),
+                            len(train_dataloader), "-".join([str('%.9f' % itm)
+                                                             for itm in sorted(list(set(optimizer.get_lr())))]),
                             float(loss),
                             (time.time() - start_time) / (log_step * args.gradient_accumulation_steps))
                 start_time = time.time()
 
     total_loss = total_loss / len(train_dataloader)
     return total_loss, global_step
+
 
 def _run_on_single_gpu(model, batch_list_t, batch_list_v, batch_sequence_output_list, batch_visual_output_list):
     sim_matrix = []
@@ -384,7 +447,7 @@ def _run_on_single_gpu(model, batch_list_t, batch_list_v, batch_sequence_output_
             video_mask, *_tmp = b2
             visual_output = batch_visual_output_list[idx2]
             b1b2_logits, *_tmp = model.get_similarity_logits(sequence_output, visual_output, input_mask, video_mask,
-                                                                     loose_type=model.loose_type)
+                                                             loose_type=model.loose_type)
             b1b2_logits = b1b2_logits.cpu().detach().numpy()
             each_row.append(b1b2_logits)
         each_row = np.concatenate(tuple(each_row), axis=-1)
@@ -392,9 +455,12 @@ def _run_on_single_gpu(model, batch_list_t, batch_list_v, batch_sequence_output_
     return sim_matrix
 
 # ---------------------------------------->
+
+
 def get_inst_idx_to_tensor_position_map(inst_idx_list):
     ''' Indicate the position of an instance in a tensor. '''
     return {inst_idx: tensor_position for tensor_position, inst_idx in enumerate(inst_idx_list)}
+
 
 def collect_active_part(beamed_tensor, curr_active_inst_idx, n_prev_active_inst, n_bm):
     ''' Collect tensor parts associated to active instances. '''
@@ -409,6 +475,7 @@ def collect_active_part(beamed_tensor, curr_active_inst_idx, n_prev_active_inst,
 
     return beamed_tensor
 
+
 def collate_active_info(input_tuples, inst_idx_to_position_map, active_inst_idx_list, n_bm, device):
     assert isinstance(input_tuples, tuple)
     sequence_output_rpt, visual_output_rpt, input_ids_rpt, input_mask_rpt, video_mask_rpt = input_tuples
@@ -416,18 +483,26 @@ def collate_active_info(input_tuples, inst_idx_to_position_map, active_inst_idx_
     # Sentences which are still active are collected,
     # so the decoder will not run on completed sentences.
     n_prev_active_inst = len(inst_idx_to_position_map)
-    active_inst_idx = [inst_idx_to_position_map[k] for k in active_inst_idx_list]
+    active_inst_idx = [inst_idx_to_position_map[k]
+                       for k in active_inst_idx_list]
     active_inst_idx = torch.LongTensor(active_inst_idx).to(device)
 
-    active_sequence_output_rpt = collect_active_part(sequence_output_rpt, active_inst_idx, n_prev_active_inst, n_bm)
-    active_visual_output_rpt = collect_active_part(visual_output_rpt, active_inst_idx, n_prev_active_inst, n_bm)
-    active_input_ids_rpt = collect_active_part(input_ids_rpt, active_inst_idx, n_prev_active_inst, n_bm)
-    active_input_mask_rpt = collect_active_part(input_mask_rpt, active_inst_idx, n_prev_active_inst, n_bm)
-    active_video_mask_rpt = collect_active_part(video_mask_rpt, active_inst_idx, n_prev_active_inst, n_bm)
-    active_inst_idx_to_position_map = get_inst_idx_to_tensor_position_map(active_inst_idx_list)
+    active_sequence_output_rpt = collect_active_part(
+        sequence_output_rpt, active_inst_idx, n_prev_active_inst, n_bm)
+    active_visual_output_rpt = collect_active_part(
+        visual_output_rpt, active_inst_idx, n_prev_active_inst, n_bm)
+    active_input_ids_rpt = collect_active_part(
+        input_ids_rpt, active_inst_idx, n_prev_active_inst, n_bm)
+    active_input_mask_rpt = collect_active_part(
+        input_mask_rpt, active_inst_idx, n_prev_active_inst, n_bm)
+    active_video_mask_rpt = collect_active_part(
+        video_mask_rpt, active_inst_idx, n_prev_active_inst, n_bm)
+    active_inst_idx_to_position_map = get_inst_idx_to_tensor_position_map(
+        active_inst_idx_list)
 
     return (active_sequence_output_rpt, active_visual_output_rpt, active_input_ids_rpt, active_input_mask_rpt, active_video_mask_rpt), \
-           active_inst_idx_to_position_map
+        active_inst_idx_to_position_map
+
 
 def beam_decode_step(decoder, inst_dec_beams, len_dec_seq,
                      inst_idx_to_position_map, n_bm, device, input_tuples, decoder_length=None):
@@ -436,18 +511,21 @@ def beam_decode_step(decoder, inst_dec_beams, len_dec_seq,
 
     ''' Decode and update beam status, and then return active beam idx'''
     def prepare_beam_dec_seq(inst_dec_beams, len_dec_seq):
-        dec_partial_seq = [b.get_current_state() for b in inst_dec_beams if not b.done]
+        dec_partial_seq = [b.get_current_state()
+                           for b in inst_dec_beams if not b.done]
         dec_partial_seq = torch.stack(dec_partial_seq).to(device)
         dec_partial_seq = dec_partial_seq.view(-1, len_dec_seq)
         return dec_partial_seq
 
     def predict_word(next_decoder_ids, n_active_inst, n_bm, device, input_tuples):
         sequence_output_rpt, visual_output_rpt, input_ids_rpt, input_mask_rpt, video_mask_rpt = input_tuples
-        next_decoder_mask = torch.ones(next_decoder_ids.size(), dtype=torch.uint8).to(device)
+        next_decoder_mask = torch.ones(
+            next_decoder_ids.size(), dtype=torch.uint8).to(device)
 
         # dec_output = decoder(sequence_output_rpt, visual_output_rpt, input_ids_rpt, input_mask_rpt,
         #                      video_mask_rpt, next_decoder_ids, next_decoder_mask, shaped=True, get_logits=True)
-        dec_output = decoder(visual_output_rpt, video_mask_rpt, next_decoder_ids, next_decoder_mask, shaped=True, get_logits=True)
+        dec_output = decoder(visual_output_rpt, video_mask_rpt,
+                             next_decoder_ids, next_decoder_mask, shaped=True, get_logits=True)
         dec_output = dec_output[:, -1, :]
         word_prob = torch.nn.functional.log_softmax(dec_output, dim=1)
         word_prob = word_prob.view(n_active_inst, n_bm, -1)
@@ -457,9 +535,11 @@ def beam_decode_step(decoder, inst_dec_beams, len_dec_seq,
         active_inst_idx_list = []
         for inst_idx, inst_position in inst_idx_to_position_map.items():
             if decoder_length is None:
-                is_inst_complete = inst_beams[inst_idx].advance(word_prob[inst_position])
+                is_inst_complete = inst_beams[inst_idx].advance(
+                    word_prob[inst_position])
             else:
-                is_inst_complete = inst_beams[inst_idx].advance(word_prob[inst_position], word_length=decoder_length[inst_idx])
+                is_inst_complete = inst_beams[inst_idx].advance(
+                    word_prob[inst_position], word_length=decoder_length[inst_idx])
             if not is_inst_complete:
                 active_inst_idx_list += [inst_idx]
 
@@ -467,7 +547,8 @@ def beam_decode_step(decoder, inst_dec_beams, len_dec_seq,
 
     n_active_inst = len(inst_idx_to_position_map)
     dec_seq = prepare_beam_dec_seq(inst_dec_beams, len_dec_seq)
-    word_prob = predict_word(dec_seq, n_active_inst, n_bm, device, input_tuples)
+    word_prob = predict_word(dec_seq, n_active_inst,
+                             n_bm, device, input_tuples)
 
     # Update the beam with predicted word prob information and collect incomplete instances
     active_inst_idx_list = collect_active_inst_idx_list(inst_dec_beams, word_prob, inst_idx_to_position_map,
@@ -475,22 +556,26 @@ def beam_decode_step(decoder, inst_dec_beams, len_dec_seq,
 
     return active_inst_idx_list
 
+
 def collect_hypothesis_and_scores(inst_dec_beams, n_best):
     all_hyp, all_scores = [], []
     for inst_idx in range(len(inst_dec_beams)):
         scores, tail_idxs = inst_dec_beams[inst_idx].sort_scores()
         all_scores += [scores[:n_best]]
 
-        hyps = [inst_dec_beams[inst_idx].get_hypothesis(i) for i in tail_idxs[:n_best]]
+        hyps = [inst_dec_beams[inst_idx].get_hypothesis(
+            i) for i in tail_idxs[:n_best]]
         all_hyp += [hyps]
     return all_hyp, all_scores
 # >----------------------------------------
 
+
 def beam_decode(args, model, tokenizer, input_ids, segment_ids, input_mask, video, video_mask):
     _, _, sequence_output, visual_output = model.get_sequence_visual_output(input_ids, segment_ids, input_mask, video,
-                                                                      video_mask)
+                                                                            video_mask)
 
-    video_mask = torch.ones(visual_output.shape[0], visual_output.shape[1], device=visual_output.device).long()
+    video_mask = torch.ones(
+        visual_output.shape[0], visual_output.shape[1], device=visual_output.device).long()
 
     # -- Repeat data for beam search
     n_bm = 1  # beam_size
@@ -505,17 +590,21 @@ def beam_decode(args, model, tokenizer, input_ids, segment_ids, input_mask, vide
     input_mask = input_mask.view(-1, input_mask.shape[-1])
     video_mask = video_mask.view(-1, video_mask.shape[-1])
 
-    sequence_output_rpt = sequence_output.repeat(1, n_bm, 1).view(n_inst * n_bm, len_s, d_h)
-    visual_output_rpt = visual_output.repeat(1, n_bm, 1).view(n_inst * n_bm, len_v, v_h)
+    sequence_output_rpt = sequence_output.repeat(
+        1, n_bm, 1).view(n_inst * n_bm, len_s, d_h)
+    visual_output_rpt = visual_output.repeat(
+        1, n_bm, 1).view(n_inst * n_bm, len_v, v_h)
     input_ids_rpt = input_ids.repeat(1, n_bm).view(n_inst * n_bm, len_s)
     input_mask_rpt = input_mask.repeat(1, n_bm).view(n_inst * n_bm, len_s)
     video_mask_rpt = video_mask.repeat(1, n_bm).view(n_inst * n_bm, len_v)
 
     # -- Prepare beams
-    inst_dec_beams = [Beam(n_bm, device=device, tokenizer=tokenizer) for _ in range(n_inst)]
+    inst_dec_beams = [Beam(n_bm, device=device, tokenizer=tokenizer)
+                      for _ in range(n_inst)]
     # -- Bookkeeping for active or not
     active_inst_idx_list = list(range(n_inst))
-    inst_idx_to_position_map = get_inst_idx_to_tensor_position_map(active_inst_idx_list)
+    inst_idx_to_position_map = get_inst_idx_to_tensor_position_map(
+        active_inst_idx_list)
     # -- Decode
     for len_dec_seq in range(1, args.max_words + 1):
         active_inst_idx_list = beam_decode_step(decoder, inst_dec_beams,
@@ -527,13 +616,15 @@ def beam_decode(args, model, tokenizer, input_ids, segment_ids, input_mask, vide
             break  # all instances have finished their path to <EOS>
 
         (sequence_output_rpt, visual_output_rpt, input_ids_rpt, input_mask_rpt, video_mask_rpt), \
-        inst_idx_to_position_map = collate_active_info(
-            (sequence_output_rpt, visual_output_rpt, input_ids_rpt, input_mask_rpt, video_mask_rpt),
+            inst_idx_to_position_map = collate_active_info(
+            (sequence_output_rpt, visual_output_rpt,
+             input_ids_rpt, input_mask_rpt, video_mask_rpt),
             inst_idx_to_position_map, active_inst_idx_list, n_bm, device)
 
     batch_hyp, batch_scores = collect_hypothesis_and_scores(inst_dec_beams, 1)
     result_list = [batch_hyp[i][0] for i in range(n_inst)]
     return result_list
+
 
 def score_generation(anno_file, result_file):
     coco = COCO(anno_file)
@@ -545,36 +636,42 @@ def score_generation(anno_file, result_file):
     coco_eval.evaluate()
     return copy.deepcopy(coco_eval.eval)
 
+
 def temperature_sampling(logits, temperature):
     # Apply temperature
     scaled_logits = logits / temperature
     probs = torch.softmax(scaled_logits, dim=-1)
-    
+
     # Sample from the distribution
     next_word_index = torch.multinomial(probs, 1)
 
     return next_word_index
 
+
 def greedy_decode(args, model, tokenizer, input_ids, segment_ids, input_mask, video, video_mask):
-    _, _, _, visual_output = model.get_sequence_visual_output(input_ids, segment_ids, input_mask, video, video_mask)
-    
-    video_mask = torch.ones(visual_output.shape[0], visual_output.shape[1], device=visual_output.device).long()
-    
+    _, _, _, visual_output = model.get_sequence_visual_output(
+        input_ids, segment_ids, input_mask, video, video_mask)
+
+    video_mask = torch.ones(
+        visual_output.shape[0], visual_output.shape[1], device=visual_output.device).long()
+
     # Initialize start token
     start_token = tokenizer.vocab["<|startoftext|>"]
-    input_caption_ids = torch.zeros(visual_output.shape[0], device=visual_output.device).data.fill_(start_token)
+    input_caption_ids = torch.zeros(
+        visual_output.shape[0], device=visual_output.device).data.fill_(start_token)
     input_caption_ids = input_caption_ids.long().unsqueeze(1)
-    
+
     # Prepare for storing multiple captions
     all_captions = []
 
-    #curr_input_caption_ids = input_caption_ids.clone()  # Reset input to start token
+    # curr_input_caption_ids = input_caption_ids.clone()  # Reset input to start token
     decoder_mask = torch.ones_like(input_caption_ids)
 
     for i in range(args.max_words):
         decoder_scores = model.decoder_caption(visual_output, video_mask, input_caption_ids, decoder_mask,
                                                shaped=True, get_logits=True)
-        next_words = temperature_sampling(decoder_scores[:, -1], temperature=0.86)
+        next_words = temperature_sampling(
+            decoder_scores[:, -1], temperature=0.86)
 
         # Update input caption ids and mask
         input_caption_ids = torch.cat([input_caption_ids, next_words], 1)
@@ -583,53 +680,59 @@ def greedy_decode(args, model, tokenizer, input_ids, segment_ids, input_mask, vi
 
     all_captions.append(input_caption_ids[:, 1:].tolist())
 
-    return all_captions 
+    return all_captions
 
-    
-def refectorResults(input_data,image_names):
-  output_data = {}
 
-  # Iterate over each dictionary in the input_data list
-  for entry in input_data:
-      image_idx = entry['image_id']  # Get the numeric image_id from input data
-      image_name = image_names[image_idx]  # Map the image_id to image_names
-      caption = entry['caption']
-      
-      # If the image_name is not in the dictionary, initialize it with an empty list
-      if image_name not in output_data:
-          output_data[image_name] = {'img_id': image_name, 'sentences': []}
-      
-      # Append the caption to the captions list, but ensure there are only 4 captions max
-      if len(output_data[image_name]['sentences']) < 4:
-          output_data[image_name]['sentences'].append(caption)
+def refectorResults(input_data, image_names):
+    output_data = {}
 
-  # Convert the output_data dictionary into a list of dictionaries
-  final_output = list(output_data.values())
-  return final_output
+    # Iterate over each dictionary in the input_data list
+    for entry in input_data:
+        # Get the numeric image_id from input data
+        image_idx = entry['image_id']
+        image_name = image_names[image_idx]  # Map the image_id to image_names
+        caption = entry['caption']
+
+        # If the image_name is not in the dictionary, initialize it with an empty list
+        if image_name not in output_data:
+            output_data[image_name] = {'img_id': image_name, 'sentences': []}
+
+        # Append the caption to the captions list, but ensure there are only 4 captions max
+        if len(output_data[image_name]['sentences']) < 4:
+            output_data[image_name]['sentences'].append(caption)
+
+    # Convert the output_data dictionary into a list of dictionaries
+    final_output = list(output_data.values())
+    return final_output
+
+
 def generalRefactor(value_list, image_names):
-  output_data = []
+    output_data = []
 
-  # Iterate over each dictionary in the input_data list
-  for entry in value_list:
-      image_idx = entry['image_id']  # Get the numeric image_id from input data
-      image_name = image_names[image_idx]  # Map the image_id to image_names
-      caption = entry['caption']
-      
-      # If the image_name is not in the dictionary, initialize it with an empty list
-      if image_name not in output_data:
-          output_data.append({'captions': caption ,'image_id': image_name})
-  
-  return output_data
+    # Iterate over each dictionary in the input_data list
+    for entry in value_list:
+        # Get the numeric image_id from input data
+        image_idx = entry['image_id']
+        image_name = image_names[image_idx]  # Map the image_id to image_names
+        caption = entry['caption']
+
+        # If the image_name is not in the dictionary, initialize it with an empty list
+        if image_name not in output_data:
+            output_data.append({'captions': caption, 'image_id': image_name})
+
+    return output_data
 # Updated evaluation function
-def eval_epoch(args, model, test_dataloader, tokenizer, device ):
+
+
+def eval_epoch(args, model, test_dataloader, tokenizer, device):
     if hasattr(model, 'module'):
         model = model.module.to(device)
     else:
         model = model.to(device)
-    
+
     all_result_lists = []
-    value_list =[]
-    
+    value_list = []
+
     model.eval()
     with torch.no_grad():
         for i, batch in enumerate(test_dataloader):
@@ -637,20 +740,22 @@ def eval_epoch(args, model, test_dataloader, tokenizer, device ):
             batch = tuple(t.to(device, non_blocking=True) for t in batch[:-1])
 
             input_ids, input_mask, segment_ids, bef_image, aft_image, image_mask, \
-            pairs_input_caption_ids, pairs_decoder_mask, pairs_output_caption_ids = batch
+                pairs_input_caption_ids, pairs_decoder_mask, pairs_output_caption_ids = batch
 
             image_pair = torch.cat([bef_image, aft_image], 1)
             # Process the generated result and extract text
-            loopCounter=0
+            loopCounter = 0
             for iteration in range(4):
-                result_list = greedy_decode(args, model, tokenizer, input_ids, segment_ids, input_mask, image_pair, image_mask)
-                
+                result_list = greedy_decode(
+                    args, model, tokenizer, input_ids, segment_ids, input_mask, image_pair, image_mask)
+
                 # Process the generated result and extract text
                 for re_idx, (image_name, re_list) in enumerate(zip(image_names, result_list)):
 
                     # Loop through the re_list and extract captions
                     for idx, re_item in enumerate(re_list):
-                        decode_text_list = tokenizer.convert_ids_to_tokens(re_item)
+                        decode_text_list = tokenizer.convert_ids_to_tokens(
+                            re_item)
 
                         # Clean up the decoded text (handle end-of-text markers, padding, etc.)
                         if "<|endoftext|>" in decode_text_list:
@@ -661,13 +766,15 @@ def eval_epoch(args, model, test_dataloader, tokenizer, device ):
                             decode_text_list = decode_text_list[:PAD_index]
 
                         decode_text = decode_text_list.strip()
-                        new_decode_item = {"caption": decode_text, "image_id":idx }
+                        new_decode_item = {
+                            "caption": decode_text, "image_id": idx}
                         all_result_lists.append(new_decode_item)
 
-    all_result_lists=refectorResults(all_result_lists,image_names)
-    
+    all_result_lists = refectorResults(all_result_lists, image_names)
+
     # Return captions and metrics for further use
     return all_result_lists
+
 
 def main():
     global logger
@@ -684,21 +791,23 @@ def main():
     assert args.datatype in DATALOADER_DICT
 
     assert DATALOADER_DICT[args.datatype]["test"] is not None \
-           or DATALOADER_DICT[args.datatype]["val"] is not None
+        or DATALOADER_DICT[args.datatype]["val"] is not None
 
     test_dataloader, test_length = None, 0
     if DATALOADER_DICT[args.datatype]["test"] is not None:
-        test_dataloader, test_length = DATALOADER_DICT[args.datatype]["test"](args, tokenizer)
+        test_dataloader, test_length = DATALOADER_DICT[args.datatype]["test"](
+            args, tokenizer)
 
     if DATALOADER_DICT[args.datatype]["val"] is not None:
-        val_dataloader, val_length = DATALOADER_DICT[args.datatype]["val"](args, tokenizer, subset="val")
+        val_dataloader, val_length = DATALOADER_DICT[args.datatype]["val"](
+            args, tokenizer, subset="val")
     else:
         val_dataloader, val_length = test_dataloader, test_length
 
-    ## report validation results if the ["test"] is None
+    # report validation results if the ["test"] is None
     if test_dataloader is None:
         test_dataloader, test_length = val_dataloader, val_length
-        
+
     if args.local_rank == 0:
         logger.info("***** Running test *****")
         logger.info("  Num examples = %d", test_length)
@@ -707,12 +816,24 @@ def main():
         logger.info("***** Running val *****")
         logger.info("  Num examples = %d", val_length)
 
-
-    captions= eval_epoch(args, model, test_dataloader,tokenizer, device)
+    captions = eval_epoch(args, model, test_dataloader, tokenizer, device)
     print(captions)
-    json.dump(captions, open(os.path.join(args.output_dir, "hyp_ep_%s.json" % 1), "w"))
+    file_index = 1  # This should be set based on your specific conditions or input
+    file_name = f"hyp_ep_{file_index}.json"
+    json_path = os.path.join(args.output_dir, file_name)
+    json.dump(captions, open(json_path, "w"))
+    # json.dump(captions, open(os.path.join(
+    #     args.output_dir, "hyp_ep_%s.json" % 1), "w"))
+    # Construct input and output file paths for caption generation
+    input_file = json_path
+    output_file = os.path.join(
+        args.output_dir, f"after_processed_{file_index}.json")
+
+    # Call the main method of captionGeneration.py
+    captionsGeneration.main(input_file, output_file)
+
+    print(f"Output JSON saved to: {output_file}")
 
 
 if __name__ == "__main__":
     main()
-    
