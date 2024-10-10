@@ -1,6 +1,15 @@
+import os
 import json
 from openai import OpenAI
-OPENAI_API_KEY = "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"
+
+
+# 使用环境变量获取 API 密钥
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+if OPENAI_API_KEY is None:
+    raise ValueError(
+        "API key not found. Please set the OPENAI_API_KEY environment variable.")
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 client = OpenAI(api_key=OPENAI_API_KEY)
 structure = """
    { "name": "v2_100", "attributes":
