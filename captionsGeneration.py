@@ -3,7 +3,7 @@ import json
 from openai import OpenAI
 
 
-# 使用环境变量获取 API 密钥
+# Get openai key
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 if OPENAI_API_KEY is None:
     raise ValueError(
