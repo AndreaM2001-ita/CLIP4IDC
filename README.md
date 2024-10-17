@@ -11,9 +11,9 @@ pip install pycocoevalcap
 
 ## Data Preparing
 **For Spot-the-Diff**
-Restructure your dataset as spot the diff 
+Either Restructure your dataset as spot the diff 
 
-Resized images can be download from [Learning to Describe Differences Between Pairs of Similar Images (EMNLP18)](https://github.com/harsh19/spot-the-diff/blob/master/data/get_images.txt). Raw captions can be download from [link](https://github.com/harsh19/spot-the-diff/tree/master/data/annotations). 
+or Resized images can be download from [Learning to Describe Differences Between Pairs of Similar Images (EMNLP18)](https://github.com/harsh19/spot-the-diff/blob/master/data/get_images.txt). Raw captions can be download from [link](https://github.com/harsh19/spot-the-diff/tree/master/data/annotations). 
 
 Collecting the captions belonging to the same image pair by running
 
