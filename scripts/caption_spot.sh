@@ -3,8 +3,8 @@
 export JAVA_HOME="your_jdk/"
 export PATH=$JAVA_HOME/bin:$PATH
 
-DATA_PATH=/content/drive/MyDrive/CLIP4IDC/images
-python /content/drive/MyDrive/CLIP4IDC/CLIP4IDCinference.py \
+DATA_PATH=images
+python CLIP4IDCinference.py \
 --do_train \
 --num_thread_reader=4 \
 --epochs=150 \
@@ -21,4 +21,4 @@ python /content/drive/MyDrive/CLIP4IDC/CLIP4IDCinference.py \
 --freeze_layer_num 0 \
 --linear_patch 2d \
 --pretrained_clip_name ViT-B/32 \
---init_model /content/drive/MyDrive/pretrained1/pytorch_model.bin.30
+--init_model pretrained/pytorch_model.bin.30
