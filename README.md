@@ -1,11 +1,4 @@
 # CLIP4IDC: CLIP for Image Difference Captioning
-
-The implementation of paper [**CLIP4IDC: CLIP for Image Difference Captioning**](https://arxiv.org/abs/2206.00629). 
-
-CLIP4IDC is a image difference captioning model based on [CLIP (ViT-B)](https://github.com/openai/CLIP). The model achieve competitive results on CLEVR-Change, Spot-the-Diff and Image Editing Request.
-
-![CLIP4IDC](CLIP4IDC.png)
-
 ## Requirement
 ```sh
 # From CLIP
@@ -13,21 +6,12 @@ conda install --yes -c pytorch pytorch=1.7.1 torchvision cudatoolkit=11.0
 pip install ftfy regex tqdm
 pip install opencv-python boto3 requests pandas
 pip install "git+https://github.com/salaniz/pycocoevalcap.git"
+pip install pycocoevalcap
 ```
 
 ## Data Preparing
-
-**For CLEVR-Change**
-
-The official data can be found here: [google drive link](https://drive.google.com/file/d/1HJ3gWjaUJykEckyb2M0MB4HnrJSihjVe/view) provided by [Robust Change Captioning (ICCV19)](https://github.com/Seth-Park/RobustChangeCaptioning). 
-
-Extracting this file will create data directory.
-
-```sh
-tar -xzvf clevr_change.tar.gz
-```
-
 **For Spot-the-Diff**
+Restructure your dataset as spot the diff 
 
 Resized images can be download from [Learning to Describe Differences Between Pairs of Similar Images (EMNLP18)](https://github.com/harsh19/spot-the-diff/blob/master/data/get_images.txt). Raw captions can be download from [link](https://github.com/harsh19/spot-the-diff/tree/master/data/annotations). 
 
