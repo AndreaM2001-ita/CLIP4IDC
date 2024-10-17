@@ -48,17 +48,7 @@ your_data_path
 |   |–– reformat_test.json
 ```
 
-
-
-
 ## Prepare for Evaluation
-
-**For CLEVR-Change**
-
-To evaluate captions, we need to first reformat the caption annotations into COCO eval tool format. Please run the command `python utils/eval_utils.py` according to the instructions given in `Evaluation` in [Robust Change Captioning (ICCV19)](https://github.com/Seth-Park/RobustChangeCaptioning).
-
-Renaming the output file as `clevr_total_change_captions_reformat.json`. 
-
 
 **For Spot-the-Diff**
 
