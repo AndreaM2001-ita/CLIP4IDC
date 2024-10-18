@@ -683,7 +683,7 @@ def greedy_decode(args, model, tokenizer, input_ids, segment_ids, input_mask, vi
     return all_captions
 
 
-def refectorResults(input_data, image_names):
+def refactorResults(input_data, image_names):
     output_data = {}
 
     # Iterate over each dictionary in the input_data list
@@ -706,24 +706,8 @@ def refectorResults(input_data, image_names):
     return final_output
 
 
-def generalRefactor(value_list, image_names):
-    output_data = []
 
-    # Iterate over each dictionary in the input_data list
-    for entry in value_list:
-        # Get the numeric image_id from input data
-        image_idx = entry['image_id']
-        image_name = image_names[image_idx]  # Map the image_id to image_names
-        caption = entry['caption']
-
-        # If the image_name is not in the dictionary, initialize it with an empty list
-        if image_name not in output_data:
-            output_data.append({'captions': caption, 'image_id': image_name})
-
-    return output_data
 # Updated evaluation function
-
-
 def eval_epoch(args, model, test_dataloader, tokenizer, device):
     if hasattr(model, 'module'):
         model = model.module.to(device)
@@ -770,7 +754,7 @@ def eval_epoch(args, model, test_dataloader, tokenizer, device):
                             "caption": decode_text, "image_id": idx}
                         all_result_lists.append(new_decode_item)
 
-    all_result_lists = refectorResults(all_result_lists, image_names)
+    all_result_lists = refactorResults(all_result_lists, image_names)
 
     # Return captions and metrics for further use
     return all_result_lists
