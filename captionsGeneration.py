@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 #path to env in google drive
 dotenv_path = '/content/drive/MyDrive/env'
+load_dotenv(dotenv_path)
 
 # Get openai key
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
