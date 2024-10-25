@@ -2,6 +2,10 @@ import os
 import json
 from openai import OpenAI
 
+from dotenv import load_dotenv
+
+#path to env in google drive
+dotenv_path = '/content/drive/MyDrive/env'
 
 # Get openai key
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -9,8 +13,9 @@ if OPENAI_API_KEY is None:
     raise ValueError(
         "API key not found. Please set the OPENAI_API_KEY environment variable.")
 
+
 client = OpenAI(api_key=OPENAI_API_KEY)
-client = OpenAI(api_key=OPENAI_API_KEY)
+
 structure = """
    { "name": "v2_100", "attributes":
  [
@@ -29,7 +34,7 @@ requirement = f"""please help me transform the file . This file contains compari
             "shape_2, and so forth, do the same for color and texture. Then, use these labels as keys, and the sentence itself as the value. Note, in the file, the comparisons mention \"before image\" and \"after image.\" You must replace \"before\" with \"image1\" and \"after\" with \"image2.\" " \
           "Ultimately, you should provide me with a JSON array where each item corresponds to an image. The structure of each item in this array should be as follows:{structure}
           Remember, I only need this array returned to me, as I intend to use your message directly to generate the final document, and then please rember
-          that I need you to convert first 10 entries ,remember for each img_id ,you need to do all sentences ,secondly please really,just return the json array string,do not add any other of content, otherwise
+          that I need you to convert entire img_ids ,remember for each img_id ,you need to do all sentences ,secondly please really,just return the json array string,do not add any other of content, otherwise
           how am i supposed to user your message directly, " \
        """
 
