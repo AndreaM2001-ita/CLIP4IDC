@@ -641,38 +641,33 @@ def temperature_sampling(logits, temperature):
     # Apply temperature
     scaled_logits = logits / temperature
     probs = torch.softmax(scaled_logits, dim=-1)
-
+    
     # Sample from the distribution
     next_word_index = torch.multinomial(probs, 1)
 
     return next_word_index
 
-
 def greedy_decode(args, model, tokenizer, input_ids, segment_ids, input_mask, video, video_mask):
-    _, _, _, visual_output = model.get_sequence_visual_output(
-        input_ids, segment_ids, input_mask, video, video_mask)
-
-    video_mask = torch.ones(
-        visual_output.shape[0], visual_output.shape[1], device=visual_output.device).long()
-
+    _, _, _, visual_output = model.get_sequence_visual_output(input_ids, segment_ids, input_mask, video, video_mask)
+    
+    video_mask = torch.ones(visual_output.shape[0], visual_output.shape[1], device=visual_output.device).long()
+    
     # Initialize start token
     start_token = tokenizer.vocab["<|startoftext|>"]
-    input_caption_ids = torch.zeros(
-        visual_output.shape[0], device=visual_output.device).data.fill_(start_token)
+    input_caption_ids = torch.zeros(visual_output.shape[0], device=visual_output.device).data.fill_(start_token)
     input_caption_ids = input_caption_ids.long().unsqueeze(1)
-
+    
     # Prepare for storing multiple captions
     all_captions = []
 
-    # curr_input_caption_ids = input_caption_ids.clone()  # Reset input to start token
+    #curr_input_caption_ids = input_caption_ids.clone()  # Reset input to start token
     decoder_mask = torch.ones_like(input_caption_ids)
 
     for i in range(args.max_words):
         decoder_scores = model.decoder_caption(visual_output, video_mask, input_caption_ids, decoder_mask,
                                                shaped=True, get_logits=True)
-        next_words = temperature_sampling(
-            decoder_scores[:, -1], temperature=0.86)
-
+        next_words = temperature_sampling(decoder_scores[:, -1], temperature=0.75)
+        #next_words = decoder_scores[:, -1].max(1)[1].unsqueeze(1)
         # Update input caption ids and mask
         input_caption_ids = torch.cat([input_caption_ids, next_words], 1)
         next_mask = torch.ones_like(next_words)
@@ -680,66 +675,63 @@ def greedy_decode(args, model, tokenizer, input_ids, segment_ids, input_mask, vi
 
     all_captions.append(input_caption_ids[:, 1:].tolist())
 
-    return all_captions
+    return all_captions 
+  
+def refectorResults(input_data,image_names):
+  output_data = {}
 
+  # Iterate over each dictionary in the input_data list
+  for entry in input_data:
+      
+      image_idx = entry['image_id']  # Get the numeric image_id from input data
+      image_name = image_names[image_idx]  # Map the image_id to image_names
+      caption = entry['caption']
+      # If the image_name is not in the dictionary, initialize it with an empty list
+      if image_name not in output_data:
+          output_data[image_name] = {'img_id': image_name, 'sentences': []}
+      
+      # Append the caption to the captions list, but ensure there are only 4 captions max
+      if len(output_data[image_name]['sentences']) < 4:
+          output_data[image_name]['sentences'].append(caption)
 
-def refactorResults(input_data, image_names):
-    output_data = {}
-
-    # Iterate over each dictionary in the input_data list
-    for entry in input_data:
-        # Get the numeric image_id from input data
-        image_idx = entry['image_id']
-        image_name = image_names[image_idx]  # Map the image_id to image_names
-        caption = entry['caption']
-
-        # If the image_name is not in the dictionary, initialize it with an empty list
-        if image_name not in output_data:
-            output_data[image_name] = {'img_id': image_name, 'sentences': []}
-
-        # Append the caption to the captions list, but ensure there are only 4 captions max
-        if len(output_data[image_name]['sentences']) < 4:
-            output_data[image_name]['sentences'].append(caption)
-
-    # Convert the output_data dictionary into a list of dictionaries
-    final_output = list(output_data.values())
-    return final_output
-
-
+  # Convert the output_data dictionary into a list of dictionaries
+  final_output = list(output_data.values())
+  return final_output
 
 # Updated evaluation function
-def eval_epoch(args, model, test_dataloader, tokenizer, device):
+def eval_epoch(args, model, test_dataloader, tokenizer, device ):
     if hasattr(model, 'module'):
         model = model.module.to(device)
     else:
         model = model.to(device)
-
+    
     all_result_lists = []
-    value_list = []
-
+    image_namess = []
+    value_list =[]
+    
     model.eval()
+    
     with torch.no_grad():
+        loopCounter=0  #loop counter initialisation fro mathematical adjustments
         for i, batch in enumerate(test_dataloader):
             image_names = batch[-1]
             batch = tuple(t.to(device, non_blocking=True) for t in batch[:-1])
-
+            #prepare image information
             input_ids, input_mask, segment_ids, bef_image, aft_image, image_mask, \
-                pairs_input_caption_ids, pairs_decoder_mask, pairs_output_caption_ids = batch
+            pairs_input_caption_ids, pairs_decoder_mask, pairs_output_caption_ids = batch
 
             image_pair = torch.cat([bef_image, aft_image], 1)
             # Process the generated result and extract text
-            loopCounter = 0
+            
+            image_namess.extend(image_names)
             for iteration in range(4):
-                result_list = greedy_decode(
-                    args, model, tokenizer, input_ids, segment_ids, input_mask, image_pair, image_mask)
-
+                result_list = greedy_decode(args, model, tokenizer, input_ids, segment_ids, input_mask, image_pair, image_mask)
+                 
                 # Process the generated result and extract text
                 for re_idx, (image_name, re_list) in enumerate(zip(image_names, result_list)):
-
                     # Loop through the re_list and extract captions
                     for idx, re_item in enumerate(re_list):
-                        decode_text_list = tokenizer.convert_ids_to_tokens(
-                            re_item)
+                        decode_text_list = tokenizer.convert_ids_to_tokens(re_item)
 
                         # Clean up the decoded text (handle end-of-text markers, padding, etc.)
                         if "<|endoftext|>" in decode_text_list:
@@ -748,14 +740,15 @@ def eval_epoch(args, model, test_dataloader, tokenizer, device):
                         if "!" in decode_text_list:
                             PAD_index = decode_text_list.index("!")
                             decode_text_list = decode_text_list[:PAD_index]
-
+                        #take results and report with correct data structure
                         decode_text = decode_text_list.strip()
-                        new_decode_item = {
-                            "caption": decode_text, "image_id": idx}
+                        #idx+(32*loopCounter) to accomodate for bigger batches ofimages used for inference
+                        new_decode_item = {"caption": decode_text, "image_id":idx+(32*loopCounter) }
                         all_result_lists.append(new_decode_item)
+            loopCounter+=1
 
-    all_result_lists = refactorResults(all_result_lists, image_names)
-
+    all_result_lists=refectorResults(all_result_lists,image_namess)
+    
     # Return captions and metrics for further use
     return all_result_lists
 
@@ -781,7 +774,7 @@ def main():
     if DATALOADER_DICT[args.datatype]["test"] is not None:
         test_dataloader, test_length = DATALOADER_DICT[args.datatype]["test"](
             args, tokenizer)
-
+    """
     if DATALOADER_DICT[args.datatype]["val"] is not None:
         val_dataloader, val_length = DATALOADER_DICT[args.datatype]["val"](
             args, tokenizer, subset="val")
@@ -791,14 +784,14 @@ def main():
     # report validation results if the ["test"] is None
     if test_dataloader is None:
         test_dataloader, test_length = val_dataloader, val_length
-
+    """
     if args.local_rank == 0:
         logger.info("***** Running test *****")
         logger.info("  Num examples = %d", test_length)
         logger.info("  Batch size = %d", args.batch_size_val)
         logger.info("  Num steps = %d", len(test_dataloader))
-        logger.info("***** Running val *****")
-        logger.info("  Num examples = %d", val_length)
+        #logger.info("***** Running val *****")
+        #logger.info("  Num examples = %d", val_length)
 
     captions = eval_epoch(args, model, test_dataloader, tokenizer, device)
     print(captions)
